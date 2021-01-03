@@ -1,0 +1,43 @@
+{
+  "name": "Imanzi-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index",
+    "dev": "nodemon --exec babel-node src/index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlackHacks-Studio-RW/Imanzi-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BlackHacks-Studio-RW/Imanzi-backend/issues"
+  },
+  "homepage": "https://github.com/BlackHacks-Studio-RW/Imanzi-backend#readme",
+  "dependencies": {
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/node": "^7.12.10",
+    "@babel/plugin-transform-runtime": "^7.12.10",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/register": "^7.12.10",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.23.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.2.0",
+    "joi": "^17.3.0",
+    "jsonwebtoken": "^8.5.1",
+    "path": "^0.12.7",
+    "pg": "^8.5.1",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^6.3.5",
+    "sequelize-cli": "^6.2.0"
+  },
+  "devDependencies": {}
+}
