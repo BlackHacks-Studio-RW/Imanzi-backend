@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { config } from 'dotenv';
+// import { config } from 'dotenv';
+const {config} = pkg;
+import pkg from 'dotenv';
 
 config();
 export const jwtToken = {
