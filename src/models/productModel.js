@@ -9,7 +9,7 @@ const reviewSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',
-    },
+    }
   },
   {
     timestamps: true,
@@ -18,20 +18,16 @@ const reviewSchema = mongoose.Schema(
 
 const productSchema = mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'User',
-    },
+    // user: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   required: true,
+    //   ref: 'User',
+    // },
     name: {
       type: String,
       required: true,
     },
     image: {
-      type: String,
-      required: true,
-    },
-    brand: {
       type: String,
       required: true,
     },
@@ -64,6 +60,11 @@ const productSchema = mongoose.Schema(
       required: true,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ['pending', 'approved','declined'],
+      default: 'pending'
+    }
   },
   {
     timestamps: true,
