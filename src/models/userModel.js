@@ -8,7 +8,7 @@ const requireString = {
 };
 const userSchema = mongoose.Schema(
     {
-      names: requireString,
+      name: requireString,
       gender: String,
       dob: Date,
       address: String,
@@ -26,11 +26,18 @@ const userSchema = mongoose.Schema(
         require: true,
         default: "client"
       },
+      isAdmin: {
+        type: Boolean,
+        require: true,
+        default: false
+      },
       isActive: {
         type: Boolean,
         require: true,
-        default: true
-      }
+        default: false
+      },
+      ActivationCode: requireString,
+      activationExpires: Date,
     },
     {
       toJSON: {

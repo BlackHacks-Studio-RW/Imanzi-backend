@@ -9,7 +9,7 @@ import Response from '../utils/Response.js'
 const {config} = pkg;
 import pkg from 'dotenv';
 import MailSender from '../utils/mail.js'
-
+import transporter from '../utils/transporter.js'
 const className = "Authentication";
 class Authentication {
     /**
@@ -19,7 +19,7 @@ class Authentication {
      * @returns {Object[]} Response Object with its status
      */
     static async registration(req,res) {
-        var {names, email ,password} = req.body;
+        var {name, email ,password} = req.body;
         var { error } = Validator.validateRegister(req.body)
         
         if (error) {
@@ -31,30 +31,46 @@ class Authentication {
             if (await User.findOne({ email })) {
               return Response.send409(res, "Email already exists");
             }
-      
+            const ActivationCode = crypto.randomBytes(20).toString('hex');
+            const activationExpires = Date.now() + 360000; //1day
             password = bcrypt.hashSync(password, 10);
             var user = new User({
-              names: names,
+              name: name,
               email: email,
-              password: password
+              password: password,
+              ActivationCode: ActivationCode,
+              activationExpires: activationExpires
             });
             await user.save();
             console.log("done")
-            // email sending
-            // await MailSender.registrationEmail(names, email);
-            Response.send201(res, "User registered successfully!", {
-              token: jwt.sign(
-                {
-                  email: user.email,
-                },
-                process.env.SECRET_OR_KEY
-              ),
-              user: {
-                names: user.names,
-                email: user.email
+            const token = jwt.sign(
+              {
+                  userId: user._id
+                  
+              },
+              process.env.SECRET_OR_KEY,
+              {
+                  expiresIn: 60 * 60 * 24 * 14,
               }
-            });
-          } catch (err) {
+          );
+
+          const data = {
+            from: `${process.env.MailSender}`,
+            to: user.email,
+            subject: "Welcome to Imanzi Creations",
+            html: `Dear ${name} <br>,
+            Thank you for signing up to Imanzi creations's platform<br>.
+            Please click this button to <button><a href="http://localhost:4000/user/activate/${user.id}/${user.ActivationCode}/"> activate </a></button>
+            `        };
+        await transporter.sendMail(data);
+            Response.send201(res, "Activation email sent!",{
+              user: {
+                name: user.name,
+                email: user.email,
+              }
+            })
+          
+          } catch (error) {
             Response.sendFailure(res, error, "Something went wrong", className);
         }
         

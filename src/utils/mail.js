@@ -12,11 +12,12 @@ class MailSender {
      * Email Sending
      
      */
-    static async registrationEmail(names,email) {
+    static async registrationEmail(name,email) {
         jwt.sign(
             "randomString", {
             expiresIn: 10000
         },
+        process.env.SECRET_OR_KEY,
             (err, token) => {
                 if (err) throw err;
                         
@@ -24,7 +25,7 @@ class MailSender {
                     from: "mjones6944@gmail.com",
                     to: email,
                     subject: "Welcome to Imanzi Creations",
-                    html: `Dear ${names} <br>,
+                    html: `Dear ${name} <br>,
                     Thank you for signing up to Imanzi creations's platform<br>.
                     Please click this button to <button><a href="http://localhost:4000/user/activate/${token}"> activate </a></button>
                     `

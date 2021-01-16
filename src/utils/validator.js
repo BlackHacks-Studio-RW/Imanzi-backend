@@ -3,7 +3,7 @@ import Joi from '@hapi/joi';
 class Validator {
   static validateRegister(account) {
     return Joi.object({
-      names: Joi.string().required(),
+      name: Joi.string().required(),
       email: Joi.string()
         .email()
         .required(),
