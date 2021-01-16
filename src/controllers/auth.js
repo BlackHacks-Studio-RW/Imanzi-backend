@@ -40,46 +40,22 @@ class Authentication {
             });
             await user.save();
             console.log("done")
+            // email sending
             // await MailSender.registrationEmail(names, email);
-      
-            const payload = {
-                user: {
-                    id: user.id
-                }
-            };
-            jwt.sign(
-                payload,
-                "randomString", {
-                expiresIn: 10000
-            },
-                (err, token) => {
-                    if (err) throw err;
-                    //
-                    const mailcredentials = {
-                        from: "noreply@arti.rw",
-                        to: email,
-                        subject: "Welcome to Arti",
-                        html: `Dear ${username} <br>,
-                        Thank you for signing up to Arti's platform<br>.
-                        Please click this button to <button><a href="http://localhost:4000/user/activate/${payload.user.id}"> activate </a></button>
-                        `
-                    }
-                    transporter.sendMail(mailcredentials)
-                    .then(resp=>{
-                        console.log('email sent')
-                    })
-                    .catch(err=>{
-                        console.log(err)
-                    })
-                    //
-                    res.status(200).json({
-                        token
-                    });
-                }
-            );
+            Response.send201(res, "User registered successfully!", {
+              token: jwt.sign(
+                {
+                  email: user.email,
+                },
+                process.env.SECRET_OR_KEY
+              ),
+              user: {
+                names: user.names,
+                email: user.email
+              }
+            });
           } catch (err) {
-            console.log(err.message);
-            res.status(500).send("Error in Saving");
+            Response.sendFailure(res, error, "Something went wrong", className);
         }
         
  
@@ -98,23 +74,6 @@ class Authentication {
     } catch (error) {
       Response.sendFailure(res, error, "Something went wrong", className);
     }
-  }
-
-  static async Delete (req, res) {
-//     var { email } = req.body;
-//     try {
-//         user = await User.findOneAndRemove({ email: email })
-//         if (user ==  null) {
-//             return res.status(404).json({message: 'Cannot find user'})
-//         }
-//         // await res.user.remove()
-//         // res.json({message: ' user Deleted'})
-
-//     } catch(err) {
-//         return res.status(500).json({message: err.message })
-//     }
-//     res.user = user
-//     next()
   }
 }
 

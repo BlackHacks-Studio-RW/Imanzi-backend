@@ -9,7 +9,5 @@ const router = express.Router();
 router.use(express.json());
 router.post('/api/users/register', Authentication.registration);
 router.delete('/api/users/delete', Authentication.profileDelete);
-router.delete('/api/users/delet', Authentication.Delete);
-
 
 export default router;

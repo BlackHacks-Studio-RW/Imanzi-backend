@@ -13,52 +13,43 @@ class MailSender {
      
      */
     static async registrationEmail(names,email) {
-        const payload = {
-            user: {
-                id: user.id
-            }
-        };
         jwt.sign(
-            payload,
             "randomString", {
             expiresIn: 10000
         },
             (err, token) => {
                 if (err) throw err;
                         
-                const subject = "Welcome to Imanzi!";
-                const content = `Dear ${names} <br>,
-                Thank you for signing up to Imanzi's platform<br>.
-                Please click this button to <button><a href="http://localhost:3000/user/activate/${payload.user.id}"> activate </a></button>
-                `
+                const mailcredentials = {
+                    from: "mjones6944@gmail.com",
+                    to: email,
+                    subject: "Welcome to Imanzi Creations",
+                    html: `Dear ${names} <br>,
+                    Thank you for signing up to Imanzi creations's platform<br>.
+                    Please click this button to <button><a href="http://localhost:4000/user/activate/${token}"> activate </a></button>
+                    `
+                }
                 const transporter = nodemailer.createTransport({
-                    service: "gmail",
+                    host: 'smtp.gmail.com',
+                    port: 465,
+                    secure: true,
                     auth: {
-                        user: process.env.MAIL_SENDER,
-                        pass: process.env.MAIL_PASSWORD
+                        user: 'mjones6944@gmail.com',
+                        pass: '2015s3red'
                     }
                 });
-        const mail = {
-          to: email,
-          subject: subject,
-          from: {
-            email: senderEmail,
-            name: senderName
-          },
-          html: content
-        };
-        
-        transporter.sendMail(mail)
-        .then(resp=>{
-            console.log('email sent')
-        })
-        .catch(err=>{
-            console.log(err)
-        })
-        //
-        res.status(200).json({
-            token
-        });
+                    
+                    transporter.sendMail(mailcredentials)
+                    .then(resp=>{
+                        console.log('email sent')
+                    })
+                    .catch(err=>{
+                        console.log(err)
+                    })
+                    //
+                    res.status(200).json({
+                        token
+                    });
     }
 );
       }
