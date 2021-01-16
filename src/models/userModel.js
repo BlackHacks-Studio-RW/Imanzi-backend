@@ -37,7 +37,11 @@ const userSchema = mongoose.Schema(
         default: false
       },
       ActivationCode: requireString,
-      activationExpires: Date,
+      activationExpires: {
+        type: Date,
+        default: Date.now(),
+        expires: 360000,
+      }
     },
     {
       toJSON: {

@@ -66,8 +66,7 @@ class Authentication {
             Response.send201(res, "Activation email sent!",{
               user: {
                 name: user.name,
-                email: user.email,
-              }
+                email: user.email              }
             })
           
           } catch (error) {
