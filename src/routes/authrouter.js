@@ -5,9 +5,14 @@ import productController from '../controllers/product.js';
 import { userSignInValidate } from '../validators/userSigninValidator.js';
 import asyncHandler from 'express-async-handler';
 
+
 const router = express.Router();
 router.use(express.json());
 router.post('/api/users/register', Authentication.registration);
 router.delete('/api/users/delete', Authentication.profileDelete);
+router.post('/api/users/signin', Authentication.signIn);
+router.get('/api/users/activate/:id/:code', Authentication.signIn);
+
 
 export default router;
+
