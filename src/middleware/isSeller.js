@@ -1,6 +1,12 @@
 import { verifyingToken } from '../utils/jwToken.js';
 
 const authMiddleware = {
+  /**
+   * 
+   * @param {*} req express
+   * @param {*} res express response
+   * @param {*} next 
+   */
   verifySeller: (req, res, next) => {
     try {
       const token = req.headers.token;

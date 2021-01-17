@@ -2,6 +2,7 @@
 import express from 'express'
 import Product from '../models/productModel.js'
 import asyncHandler from 'express-async-handler'
+import User from '../models/userModel.js'
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -13,8 +14,8 @@ cloudinary.config({
 class Product_ {
   async getProducts(req, res) {
     try {
-      const products = await Product.find({})
-
+      const products = await Product.find({status:'approved'})
+      
       res.status(200).send(products)
     } catch (error) {
       res.status(500).send(error);
@@ -50,6 +51,7 @@ class Product_ {
       const product = new Product({
         name: req.body.name,
         image: file.url,
+        user: req.user.id,
         category: req.body.category,
         description: req.body.description,
         price: req.body.price,
@@ -71,7 +73,7 @@ class Product_ {
 
   async updateProduct(req,res){
     try {
-
+      
       let files;
       if (req.files != null) {
         files = req.files.photo;
@@ -91,15 +93,22 @@ class Product_ {
       const product = await Product.findById(req.params.id)
 
       if (product) {
-        product.name = newProduct.name
-        product.price = newProduct.price
-        product.description = newProduct.description
-        product.image = newProduct.image
-        product.category = newProduct.category
-        product.countInStock = newProduct.countInStock
+        if(req.user.id === product.user.toString()){
+          product.name = newProduct.name
+          product.price = newProduct.price
+          product.description = newProduct.description
+          product.image = newProduct.image
+          product.category = newProduct.category
+          product.countInStock = newProduct.countInStock
 
-        const updatedProduct = await product.save()
-        res.json(updatedProduct)
+          const updatedProduct = await product.save()
+          res.json(updatedProduct)
+        }else{
+          res.status(403).send({
+            error: "User not authorized"
+          })
+        }
+        
       } else {
         res.status(404)
         throw new Error('Product not found')
@@ -112,13 +121,51 @@ class Product_ {
     try {
       const product = await Product.findById(req.params.id)
       if (product) {
-        await product.remove()
-        res.json({ message: 'Product removed' })
+        if(req.user.id === product.user.toString()){
+          await product.remove()
+          res.json({ message: 'Product removed' })
+        }else{
+          res.status(403).send({
+            error: 'User not authorized'
+          })
+        }
+        
       } else {
         res.status(404)
         throw new Error('Product not found')
       }
     } catch (error) {
+      res.status(500).send(error)
+    }
+  }
+
+  async approveProduct(req,res){
+    try{
+      const product = await Product.findById(req.params.id)
+      if(product){
+        if(req.body.status === 'declined'){
+          product.status = 'declined'
+          await product.save()
+          res.status(200).send({
+            status: 200,
+            message: 'Product is declined'
+          })
+        }else if(req.body.status === 'approved'){
+          product.status = 'approved',
+          await product.save()
+          res.status(200).send({
+            status: 200,
+            productStatus: product.status,
+            message:'Product is approved'
+          })
+        }
+      }else{
+        res.status(401).send({
+          status: 401,
+          message: 'product does not exist'
+        })
+      }
+    }catch(error){
       res.status(500).send(error)
     }
   }
