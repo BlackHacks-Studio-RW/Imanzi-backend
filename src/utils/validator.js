@@ -26,5 +26,16 @@ class Validator {
       isActive: Joi.string().required()
     }).validate(account);
   }
+  static validateLogin(account) {
+    return Joi.object({
+      email: Joi.string()
+        .email()
+        .required(),
+      password: Joi.string()
+        .regex(new RegExp("^(?=.*[a-z])(?=.*[0-9])(?=.{8,})"))
+        .error(new Error("Password is in incorrect format"))
+        .required()
+    }).validate(account);
+  }
 }
 export default Validator;

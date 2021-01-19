@@ -9,8 +9,9 @@ import Response from '../utils/Response.js'
 const {config} = pkg;
 import pkg from 'dotenv';
 import MailSender from '../utils/mail.js'
-import {comparePassword, hashPassword,jwtToken } from '../utils/jwToken.js';
 import transporter from '../utils/transporter.js'
+import {comparePassword, hashPassword,jwtToken } from '../utils/jwToken.js';
+
 const className = "Authentication";
 class Authentication {
     /**
@@ -33,28 +34,16 @@ class Authentication {
               return Response.send409(res, "Email already exists");
             }
             const ActivationCode = crypto.randomBytes(20).toString('hex');
-            const activationExpires = Date.now() + 360000; //1day
+            // const activationExpires = Date.now() + 360000; //1day
             password = bcrypt.hashSync(password, 10);
             var user = new User({
               name: name,
               email: email,
               password: password,
               ActivationCode: ActivationCode,
-              activationExpires: activationExpires
+              // activationExpires: activationExpires
             });
             await user.save();
-            console.log("done")
-            const token = jwt.sign(
-              {
-                  userId: user._id
-                  
-              },
-              process.env.SECRET_OR_KEY,
-              {
-                  expiresIn: 60 * 60 * 24 * 14,
-              }
-          );
-
           const data = {
             from: `${process.env.MailSender}`,
             to: user.email,
@@ -63,17 +52,21 @@ class Authentication {
             Thank you for signing up to Imanzi creations's platform<br>.
             Please click this button to <button><a href="http://localhost:3000/api/users/activate/${user.id}/${user.ActivationCode}/"> activate </a></button>
             `        };
-        await transporter.sendMail(data);
-            Response.send201(res,{
+            await transporter.sendMail(data);
+            Response.send201(res, "User registered successfully!", {
+              token: jwt.sign(
+                {
+                  email: user.email,
+                  userType: user.userType
+                },
+                process.env.SECRET_OR_KEY
+              ),
               user: {
-                name: user.name,
-                email: user.email,
-                ActivationCode: user.ActivationCode,
-                id: user.id,
-                isActive: user.isActive,             
-               }
-            })
-          
+                names: user.name,
+                email: user.email
+              }
+            });
+              
           } catch (error) {
             Response.sendFailure(res, error, "Something went wrong", className);
         }
@@ -91,7 +84,7 @@ class Authentication {
     try {
       const user = await User.findById(req.params.id);
       if (!user) {
-          res.sendStatus(401);
+          res.sendStatus(401,"User does not exist");
       } else {
           await User.updateOne(
               { ActivationCode: req.params.code },
@@ -102,45 +95,15 @@ class Authentication {
               name: user.name,
               email: user.email,
               isActive: user.isActive,
-              id: user.id             
+              id: user.id,
+              password: user.password,
              }
           })
       }
-  } catch (err) {
-      console.log(
-          "something went wrong",
-          err
-      );
-      res.sendStatus(500);
-  }
-    //   console.log("i am here")
-    // try {
-    //   const user = await User.findOne({
-    //     id: req.params,
-    //     ActivationCode: req.params.code,
-    //   });
-    //   if (!user) {
-    //     res.sendStatus(401,"user does not exist");
-
-    // } else {
-    //   await User.updateOne(
-    //     { email: user.email },
-    //     { isActive: true }
-    // );
-    // }
-    
-    // Response.send201(res,"Account activated successfully",{
-    //   user: {
-    //     name: user.name,
-    //     email: user.email,
-    //     status: user.status,
-    //     id: user.id             
-    //    }
-    // })
-               
-    // }catch (error) {
-    //   Response.sendFailure(res, error, "Something went wrong", className);
-    // }
+    }catch (error) {
+      Response.sendFailure(res, error, "Something went wrong", className);
+    }
+   
   }
     /**
    * Delete User Profile
@@ -149,7 +112,7 @@ class Authentication {
    * @returns {Object[]} Response Object with its status
    */
   static async profileDelete(req, res) {
-    var { email } = req.body;
+    const { email } = req.body;
     try {
       await User.findOneAndRemove({ email: email });
       Response.send201(res, "Profile deleted successfully!", {});
@@ -157,9 +120,75 @@ class Authentication {
       Response.sendFailure(res, error, "Something went wrong", className);
     }
   }
-  static async signIn(req, res) {
+    /**
+   * User sign in or log in
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+  static async LogIn(req, res) {
+    const { email, password } = req.body;
+    const { error } = Validator.validateLogin(req.body);
+    if (error) {
+      if (error.details) return Response.send400(res, error.details[0].message);
+      else return Response.send400(res, error.message);
+    }
+
+    try {
+      var findUser = await User.findOne({ email });
+      if (!findUser) {
+        return Response.send409(res, "Invalid Email");
+      }
+      var canLogin = bcrypt.compareSync(password, findUser.password);
+      if (!canLogin) {
+        return Response.send409(res, "Invalid Password");
+      }
+      Response.send200(res, "User logged in successfully!", {
+        token: jwt.sign(
+          {
+            email: findUser.email,
+            userType: findUser.userType
+          },
+          process.env.SECRET_OR_KEY
+        ),
+        user: {
+          names: findUser.names,
+          email: findUser.email
+        }
+      });
+              
+            } catch (error) {
+              Response.sendFailure(res, error, "Something went wrong", className);
+          }
+  }
+  /**
+   * View user profile
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+  static async profile(req, res) {
+    const email = req.body.email;
+
+    try {
+      const user = await User.findOne({ email })
+      if (user) {
+        Response.send201(res,"User found successfully",{
+          user: {
+            name: user.name,
+            email: user.email,
+            isActive: user.isActive,
+            id: user.id,
+            password: user.password,
+           }
+        })
     
+      } else {
+        console.log("user doesnot exist")
+      }
+    } catch (error) {
+      Response.sendFailure(res, error, "Something went wrong", className);
+    }
   }
 }
-
 export default Authentication;

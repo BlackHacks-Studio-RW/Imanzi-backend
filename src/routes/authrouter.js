@@ -10,9 +10,9 @@ const router = express.Router();
 router.use(express.json());
 router.post('/api/users/register', Authentication.registration);
 router.delete('/api/users/delete', Authentication.profileDelete);
-router.post('/api/users/signin', Authentication.signIn);
+router.post('/api/users/signin', Authentication.LogIn);
 router.get('/api/users/activate/:id/:code', Authentication.AccountActivation);
-
+router.get('/api/users/profile', Authentication.profile);
 
 export default router;
 
