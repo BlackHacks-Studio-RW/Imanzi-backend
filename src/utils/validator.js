@@ -13,5 +13,18 @@ class Validator {
         .required()
     }).validate(account);
   }
+  static validateProfile(account) {
+    return Joi.object({
+      id: Joi.string().required(),
+      name: Joi.string().required(),
+      gender: Joi.string().required(),
+      dob: Joi.string().required(),
+      address: Joi.string().required(),
+      email: Joi.string()
+        .email()
+        .required(),
+      isActive: Joi.string().required()
+    }).validate(account);
+  }
 }
 export default Validator;

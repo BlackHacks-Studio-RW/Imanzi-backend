@@ -55,21 +55,22 @@ class Authentication {
               }
           );
 
-        //   const data = {
-        //     from: `${process.env.MailSender}`,
-        //     to: user.email,
-        //     subject: "Welcome to Imanzi Creations",
-        //     html: `Dear ${name} <br>,
-        //     Thank you for signing up to Imanzi creations's platform<br>.
-        //     Please click this button to <button><a href="http://localhost:4000/user/activate/${user.id}/${user.ActivationCode}/"> activate </a></button>
-        //     `        };
-        // await transporter.sendMail(data);
+          const data = {
+            from: `${process.env.MailSender}`,
+            to: user.email,
+            subject: "Welcome to Imanzi Creations",
+            html: `Dear ${name} <br>,
+            Thank you for signing up to Imanzi creations's platform<br>.
+            Please click this button to <button><a href="http://localhost:3000/api/users/activate/${user.id}/${user.ActivationCode}/"> activate </a></button>
+            `        };
+        await transporter.sendMail(data);
             Response.send201(res,{
               user: {
                 name: user.name,
                 email: user.email,
                 ActivationCode: user.ActivationCode,
-                id: user.id             
+                id: user.id,
+                isActive: user.isActive,             
                }
             })
           
@@ -88,26 +89,58 @@ class Authentication {
    */
   static async AccountActivation(req, res) {
     try {
-      const user = await User.findOne({
-        id: req.params,
-        ActivationCode: req.params.code,
-      });
+      const user = await User.findById(req.params.id);
       if (!user) {
-        res.sendStatus(401,"user does not exist");
+          res.sendStatus(401);
+      } else {
+          await User.updateOne(
+              { ActivationCode: req.params.code },
+              { isActive: true }
+          );
+          Response.send201(res,"Account activated successfully",{
+            user: {
+              name: user.name,
+              email: user.email,
+              isActive: user.isActive,
+              id: user.id             
+             }
+          })
+      }
+  } catch (err) {
+      console.log(
+          "something went wrong",
+          err
+      );
+      res.sendStatus(500);
+  }
+    //   console.log("i am here")
+    // try {
+    //   const user = await User.findOne({
+    //     id: req.params,
+    //     ActivationCode: req.params.code,
+    //   });
+    //   if (!user) {
+    //     res.sendStatus(401,"user does not exist");
 
-    } else {
-      await User.updateOne(
-        { email: user.email },
-        { isActive: true }
-    );
-    }
+    // } else {
+    //   await User.updateOne(
+    //     { email: user.email },
+    //     { isActive: true }
+    // );
+    // }
     
-    res.sendStatus(401,"Account is activated"); 
-      
-          
-    }catch (error) {
-      Response.send500(res, error, className)
-    }
+    // Response.send201(res,"Account activated successfully",{
+    //   user: {
+    //     name: user.name,
+    //     email: user.email,
+    //     status: user.status,
+    //     id: user.id             
+    //    }
+    // })
+               
+    // }catch (error) {
+    //   Response.sendFailure(res, error, "Something went wrong", className);
+    // }
   }
     /**
    * Delete User Profile
