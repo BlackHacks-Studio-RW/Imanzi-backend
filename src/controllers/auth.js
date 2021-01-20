@@ -139,7 +139,7 @@ class Authentication {
       if (!findUser) {
         return Response.send409(res, "Invalid Email");
       }
-      var canLogin = bcrypt.compareSync(password, findUser.password);
+      var canLogin = bcrypt.compare(password, findUser.password);
       if (!canLogin) {
         return Response.send409(res, "Invalid Password");
       }
@@ -178,7 +178,7 @@ class Authentication {
             name: user.name,
             email: user.email,
             isActive: user.isActive,
-            id: user.id,
+            id: user.passwordToken,
             password: user.password,
            }
         })
@@ -222,10 +222,10 @@ class Authentication {
       const data = {
         from: `${process.env.MailSender}`,
         to: findUser.email,
-        subject: "Reset Password",
+        subject: "Forgot password",
         html: `Dear ${findUser.name} <br>,
         You have requested to reset your password <br>.
-        Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.id}/${passwordToken}/"> to reset your password </a></button>
+        Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.passwordToken}/"> to reset your password </a></button>
         `        };
         await transporter.sendMail(data);
         Response.send201(res, "Forgot password email sent successfully", {
@@ -252,6 +252,62 @@ class Authentication {
    * @returns {Object[]} Response Object with its status
    */
   static async resetPassword(req,res) {
+    let { email, password } = req.body;
+    let { token } = req.params.token
+    const { error } = Validator.validateReset(req.body);
+    if (error) {
+      if (error.details) return Response.send400(res, error.details[0].message);
+      else return Response.send400(res, error.message);
+    }
+
+    try {
+      var findUser = await User.findOne({ email });
+      if (!findUser) {
+        return Response.send409(res, "Invalid Email");
+      }
+      const validToken = await User.findOne({
+        passwordToken: token,
+        passwordExpires: { $gte: new Date().toISOString() }
+      });
+      if (!validToken) {
+        return Response.send400(res, "Expired or Invalid Token");
+      }
+
+      password = bcrypt.hashSync(password, 10);
+      const check = await User.findOneAndUpdate(
+        { email: email },
+        {
+          password: password,
+          passwordToken: null,
+          passwordExpires: null
+        },
+        { new: true }
+      );
+      const data = {
+        from: `${process.env.MailSender}`,
+        to: findUser.email,
+        subject: "Reset Password",
+        html: `Dear ${findUser.name} <br>,
+        Your password has been reset successfully <br>.
+        Please click this button to <button><a href="http://localhost:3000/api/users/signin/"> to login to Imanzi creations' platform</a></button>
+        `        };
+        await transporter.sendMail(data);
+        Response.send201(res, "Forgot password email sent successfully", {
+          token: jwt.sign(
+            {
+              email: email,
+              passwordToken: passwordToken
+            },
+            process.env.SECRET_OR_KEY
+          ),
+          user: {
+            names: findUser.name,
+            email: findUser.email
+          }
+        });
+    } catch (error) {
+      Response.sendFailure(res, error, className);
+    }
   }
 }
 export default Authentication;

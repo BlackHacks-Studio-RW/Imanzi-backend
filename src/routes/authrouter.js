@@ -14,7 +14,7 @@ router.post('/api/users/signin', Authentication.LogIn);
 router.get('/api/users/activate/:id/:code', Authentication.AccountActivation);
 router.get('/api/users/profile', Authentication.profile);
 router.post('/api/users/forgot', Authentication.forgotPassword);
-router.post('/api/users/reset/:id/:token', Authentication.resetPassword);
+router.get('/api/users/reset/:token', Authentication.resetPassword);
 
 export default router;
 
