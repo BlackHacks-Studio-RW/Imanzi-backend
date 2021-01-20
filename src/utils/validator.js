@@ -37,5 +37,12 @@ class Validator {
         .required()
     }).validate(account);
   }
+  static validateForgot(account) {
+    return Joi.object({
+      email: Joi.string()
+        .email()
+        .required()
+    }).validate(account);
+  }
 }
 export default Validator;

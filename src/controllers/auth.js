@@ -196,6 +196,62 @@ class Authentication {
    * @param {Object[]} res - Response
    * @returns {Object[]} Response Object with its status
    */
+  static async forgotPassword(req,res) {
+    const { email } = req.body;
+    const { error } = Validator.validateForgot(req.body);
+    if (error) {
+      if (error.details) return Response.send400(res, error.details[0].message);
+      else return Response.send400(res, error.message);
+    }
 
+    try {
+      var findUser = await User.findOne({ email });
+      if (!findUser) {
+        return Response.send409(res, "Invalid Email");
+      }
+      const passwordToken = crypto.randomBytes(20).toString("hex");
+      const passwordExpires = Date.now() + 3600000; //1 Day
+      const check = await User.findOneAndUpdate(
+        { email: findUser.email },
+        {
+          passwordToken: passwordToken,
+          passwordExpires: passwordExpires
+        },
+        { new: true }
+      );
+      const data = {
+        from: `${process.env.MailSender}`,
+        to: findUser.email,
+        subject: "Reset Password",
+        html: `Dear ${findUser.name} <br>,
+        You have requested to reset your password <br>.
+        Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.id}/${passwordToken}/"> to reset your password </a></button>
+        `        };
+        await transporter.sendMail(data);
+        Response.send201(res, "Forgot password email sent successfully", {
+          token: jwt.sign(
+            {
+              email: email,
+              passwordToken: passwordToken
+            },
+            process.env.SECRET_OR_KEY
+          ),
+          user: {
+            names: findUser.name,
+            email: findUser.email
+          }
+        });
+    } catch (error) {
+      Response.sendFailure(res, error, className);
+    }
+  }
+/**
+   * Reset password 
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+  static async resetPassword(req,res) {
+  }
 }
 export default Authentication;
