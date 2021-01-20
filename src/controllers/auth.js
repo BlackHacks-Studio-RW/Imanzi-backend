@@ -184,11 +184,18 @@ class Authentication {
         })
     
       } else {
-        console.log("user doesnot exist")
+        return Response.send409(res, "User doesnot exist");
       }
     } catch (error) {
       Response.sendFailure(res, error, "Something went wrong", className);
     }
   }
+  /**
+   * Forgot password 
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+
 }
 export default Authentication;
