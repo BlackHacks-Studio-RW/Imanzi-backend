@@ -14,6 +14,7 @@ router.use(express.json());
 
 router.get('/', (req, res) => res.send('Welcome Imanzi Website'));
 router.get('/api/products', asyncHandler(productController.getProducts));
+router.get('/api/pendingproducts', asyncHandler(productController.pendingProducts));
 router.get('/api/products/:id', asyncHandler(productController.getProduct));
 router.post('/api/users/signin', userSignInValidate, userController.signIn);
 router.post('/api/orders', orderController.addOrderItems);
@@ -25,5 +26,6 @@ router.get('/api/users', checkAuth.verifyUser, isAdmin.verifyAdmin, userControll
 router.delete('/api/users/:id', checkAuth.verifyUser, isAdmin.verifyAdmin, userController.deleteUser );
 router.get('/api/users/:id', checkAuth.verifyUser, isAdmin.verifyAdmin, userController.getUserById );
 router.put('/api/profile', checkAuth.verifyUser, userController.updateUserProfile );
+router.post('/api/products/:id/reviews', checkAuth.verifyUser, productController.reviewProduct );
 
 export default router;

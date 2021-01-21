@@ -14,7 +14,18 @@ cloudinary.config({
 class Product_ {
   async getProducts(req, res) {
     try {
+      
       const products = await Product.find({status:'approved'})
+      
+      res.status(200).send(products)
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  }
+
+  async pendingProducts(req, res) {
+    try {
+      const products = await Product.find({status:'pending'})
       
       res.status(200).send(products)
     } catch (error) {
@@ -166,6 +177,56 @@ class Product_ {
         })
       }
     }catch(error){
+      res.status(500).send(error)
+    }
+  }
+
+  async reviewProduct(req,res){
+    try {
+      const {rating, comment} = req.body;
+
+      const product = await Product.findById(req.params.id);
+
+      if(product){
+        const alreadyReviewed = product.reviews.find(
+          (r) => r.user.toString() === req.user.id.toString()
+        )
+        if(alreadyReviewed){
+          return res.status(400).send({
+            status: 400,
+            error: 'You already reviewed this product'
+          })
+        }
+
+        const review = {
+          name: req.user.first_name +' '+ req.user.last_name,
+          rating: Number(rating),
+          comment,
+          user: req.user.id
+        }
+
+        product.reviews.push(review)
+
+        product.numReviews = product.reviews.length
+
+        product.rating = product.reviews.reduce((acc,item) => item.rating + acc, 0) / product.reviews.length
+
+        await product.save()
+
+        res.status(201).send({
+          status: 201,
+          message: 'Review added'
+        })
+
+
+      }else{
+        res.status(404).send({
+          status: 404,
+          error: 'Product not found'
+        })
+      }
+    } catch (error) {
+      console.log(error)
       res.status(500).send(error)
     }
   }
