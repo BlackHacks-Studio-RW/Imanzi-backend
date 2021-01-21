@@ -36,7 +36,7 @@ class Authentication {
             const ActivationCode = crypto.randomBytes(20).toString('hex');
             // const activationExpires = Date.now() + 360000; //1day
             password = bcrypt.hashSync(password, 10);
-            var user = new User({
+            const user = new User({
               name: name,
               email: email,
               password: password,
