@@ -5,10 +5,10 @@ import { config } from 'dotenv';
 config();
 export const jwtToken = {
   createToken({
-    id, email, first_name, last_name, role
+    id, role, first_name, last_name
   }) {
     return jwt.sign({
-      id, email, first_name, last_name, role
+      id, role, first_name, last_name
     },
     process.env.SECRET_OR_KEY, { expiresIn: '24h' });
   },
