@@ -1,6 +1,8 @@
 
 import express from 'express'
-import Order from '../models/orderModel.js'
+import Order from '../models/orderModel.js';
+import Product from "../models/productModel";
+
 import asyncHandler from 'express-async-handler'
 // const cloudinary = require('cloudinary').v2;
 
@@ -10,68 +12,73 @@ import asyncHandler from 'express-async-handler'
 //   api_secret: process.env.api_secret
 // });
 
-class Order_ {
-  async addOrderItems(req, res) {
-
-    try {
-      const {orderItems, paymentMethod, itemsPrice, totalPrice} = req.body;
-      if(orderItems && orderItems.length === 0){
-        res.status(400).send({
-          message: 'Bad request'
-        })
-      }else{
-        const order = new Order({
-          orderItems, 
-          // user: req.user._id,
-          paymentMethod, 
-          itemsPrice, 
-          totalPrice
-        })
-
-        const createdOrder = await order.save()
-        res.status(201).send(createdOrder)
-      }
-
-    } catch (error) {
-      res.status(500).send(error);
+class OrderCreator {
+/**
+ * 
+ * @param {*} item 
+ * @param {*} qty 
+ */
+static retrieveItem(item, qty){
+  console.log("Item ", item);
+  return Product.findOne({
+    _id: item, 
+    countInStock: {
+      $gte: qty
     }
+  })
+  .then(resp=>{
+  if(resp && resp._id !== undefined)
+  return resp
+  else
+  throw new Error('Could not the item in stock.')
+  })
+}
+
+
+  /**
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
+  static async addOrderItems(req, res) {
+      console.log("Logged in user: "+ req.user)
+      const {item, qty} = req.body;
+
+      OrderCreator.retrieveItem(item, qty)
+      .then(itemRetrieved=>{
+        
+        // We add the item in order
+      Order.findOneAndUpdate(
+        {
+          user: req.user.id,
+          isPaid:false,
+          startedChecout: false
+        },
+        {
+          $push: {
+            orderItems:{
+              qty: qty,
+              price: itemRetrieved.price,
+              product: itemRetrieved._id
+            }
+          }
+        },
+        {
+          upsert: true, 
+          useFindAndModify: true
+        })
+
+      })
+      .then(savedOrder=>{
+        res.status(201).send(savedOrder)
+      })
+      .catch(err=>{
+        console.log(err)
+      res.status(500).send({message: err.message});
+
+      })
   }
 
-
-//   async createProduct(req, res) {
-//     try {
-//       // const user_ = await user.findOne({ where: { id } });
-//       // const role = user_.role;
-//       let files;
-//       if (req.files != null) {
-//         files = req.files.photo;
-//       }
-
-//       const file = await cloudinary.uploader.upload(files.tempFilePath);
-//       console.log(file);
-//       console.log(file.url);
-
-//       const saveProduct = await Product.create({
-//         userId: req.body.userId,
-//         name: req.body.name,
-//         image: file.url,
-//         category: req.body.category,
-//         description: req.body.description,
-//         price: req.body.price,
-//         countInStock: req.body.countInStock,
-//         status: req.body.status
-//       });
-
-//       return res.status(201).send({
-//         saveProduct,
-//         message:'Product created'
-//       })   
-        
-//     } catch (error) {
-//       console.log(error);
-//       return res.status(500).send(error);
-//     }
-//   }
  }
 
-export default new Order_();
+export default OrderCreator;

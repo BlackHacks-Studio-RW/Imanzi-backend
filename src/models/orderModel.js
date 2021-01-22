@@ -1,5 +1,27 @@
+import { boolean } from 'joi';
 import mongoose from 'mongoose'
 
+/**
+ * Order schema
+ */
+const OrderItemSchema = mongoose.Schema(
+  {
+        qty: { type: Number, required: true },
+        price: { type: Number, required: true },
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'Product',
+        },
+      }, 
+      {
+        timestamps: true,
+        _id: true
+      });
+
+      /**
+       * 
+       */
 const orderSchema = mongoose.Schema(
   {
     user: {
@@ -7,19 +29,14 @@ const orderSchema = mongoose.Schema(
       required: true,
       ref: 'User',
     },
-    orderItems: [
-      {
-        name: { type: String, required: true },
-        qty: { type: Number, required: true },
-        image: { type: String, required: true },
-        price: { type: Number, required: true },
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          required: true,
-          ref: 'Product',
-        },
-      },
-    ],
+    startedCheckout: {
+      type: Boolean,
+      default: false,
+      required: true
+    },
+    orderItems: {
+      type: [OrderItemSchema]
+    },
     paymentMethod: {
       type: String,
       required: true,

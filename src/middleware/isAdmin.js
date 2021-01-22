@@ -5,14 +5,14 @@ const authMiddleware = {
     try {
       const token = req.headers.token;
       if (!token) {
-        return res.status(400).send({ error: 'no token provided' });
+        return res.status(400).send({ message: 'no token provided' });
       }
       const user = verifyingToken(token);
       if (user.role !== 'admin') {
         return res.status(403).send({ message: 'User not an admin' });
       }next();
     } catch (error) {
-      return res.status(401).send({ error: 'Invalid Token' });
+      return res.status(401).send({ message: 'Invalid Token' });
     }
   },
 };
