@@ -36,6 +36,18 @@ const userSchema = mongoose.Schema(
         require: true,
         default: false
       },
+      role: {
+        type: String,
+        enum: ['admin','buyer','seller'],
+      },
+      online: {
+        type: Boolean,
+        default: false,
+      },
+      token: {
+      type: String,
+      default: null
+      },
       ActivationCode: requireString,
       activationExpires: {
         type: Date,
@@ -71,7 +83,7 @@ const userSchema = mongoose.Schema(
   
     const salt = await bcrypt.genSalt(10)
     this.password = await bcrypt.hash(this.password, salt)
-  })
+  });
   
   const User = mongoose.model('User', userSchema)
   

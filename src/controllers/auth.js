@@ -21,29 +21,31 @@ class Authentication {
      * @returns {Object[]} Response Object with its status
      */
     static async registration(req,res) {
-        var {name, email ,password} = req.body;
-        var { error } = Validator.validateRegister(req.body)
+      const { name, email,password } = req.body;
+      const { error } = Validator.validateRegister(req.body)
         
         if (error) {
             if (error.details) return Response.send400(res, error.details[0].message);
             else return Response.send400(res, error.message);
           }
-      
-          try {
-            if (await User.findOne({ email })) {
-              return Response.send409(res, "Email already exists");
+
+        try {
+            let user = await User.findOne({
+                email
+            });
+            if (user) {
+                return res.status(400).json({
+                    msg: "User Already Exists"
+                });
             }
             const ActivationCode = crypto.randomBytes(20).toString('hex');
-            // const activationExpires = Date.now() + 360000; //1day
-            password = bcrypt.hashSync(password, 10);
-            const user = new User({
-              name: name,
-              email: email,
-              password: password,
-              ActivationCode: ActivationCode,
-              // activationExpires: activationExpires
-            });
+            user = new User({ name, email,password, ActivationCode });
+
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+
             await user.save();
+  
           const data = {
             from: `${process.env.MailSender}`,
             to: user.email,
@@ -106,7 +108,7 @@ class Authentication {
    
   }
     /**
-   * Delete User Profile
+   * reeg User Profile
    * @param {Object[]} req - Request
    * @param {Object[]} res - Response
    * @returns {Object[]} Response Object with its status
@@ -135,31 +137,51 @@ class Authentication {
     }
 
     try {
-      var findUser = await User.findOne({ email });
-      if (!findUser) {
+      const user = await User.findOne({ email });
+      if (!user) {
         return Response.send409(res, "Invalid Email");
       }
-      var canLogin = bcrypt.compare(password, findUser.password);
+      const token = jwt.sign({ email: user.email}, process.env.SECRET_OR_KEY, { expiresIn: '40000m' });
+      var canLogin = bcrypt.compareSync(password, user.password);
       if (!canLogin) {
         return Response.send409(res, "Invalid Password");
-      }
-      Response.send200(res, "User logged in successfully!", {
-        token: jwt.sign(
-          {
-            email: findUser.email,
-            userType: findUser.userType
-          },
-          process.env.SECRET_OR_KEY
-        ),
-        user: {
-          names: findUser.names,
-          email: findUser.email
+      } 
+        await User.updateOne(
+        { email: email },
+        { 
+          online: true,
+          // token: token
         }
-      });
-              
-            } catch (error) {
+    );    
+    Response.send200(res.header('auth-token', token), "User logged in successfully!", user);
+
+        } catch (error) {
               Response.sendFailure(res, error, "Something went wrong", className);
           }
+  }
+  /**
+   * User sign out or log out
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+  static async LogOut(req, res) {
+    
+  }
+  /**
+   * Get logged in users  
+   * @param {Object[]} req - Request
+   * @param {Object[]} res - Response
+   * @returns {Object[]} Response Object with its status
+   */
+  static async loggedInUsers(req, res) {
+    try {
+      // request.user is getting fetched from Middleware after token authentication
+      const user = await User.findById(req.user.id);
+      res.json(user);
+    } catch (error) {
+      Response.sendFailure(res, error, "Error fetching users", className);
+    }
   }
   /**
    * View user profile
@@ -171,20 +193,12 @@ class Authentication {
     const email = req.body.email;
 
     try {
-      const user = await User.findOne({ email })
-      if (user) {
-        Response.send201(res,"User found successfully",{
-          user: {
-            name: user.name,
-            email: user.email,
-            isActive: user.isActive,
-            id: user.passwordToken,
-            password: user.password,
-           }
-        })
+      const users = await User.find()
+      if (users) {
+        Response.send201(res,"Users found successfully",users)
     
       } else {
-        return Response.send409(res, "User doesnot exist");
+        return Response.send409(res, "there are no users in the database");
       }
     } catch (error) {
       Response.sendFailure(res, error, "Something went wrong", className);
@@ -205,7 +219,7 @@ class Authentication {
     }
 
     try {
-      var findUser = await User.findOne({ email });
+      const findUser = await User.findOne({ email });
       if (!findUser) {
         return Response.send409(res, "Invalid Email");
       }
@@ -238,7 +252,8 @@ class Authentication {
           ),
           user: {
             names: findUser.name,
-            email: findUser.email
+            email: findUser.email,
+            passwordToken: findUser.passwordToken
           }
         });
     } catch (error) {
@@ -253,41 +268,65 @@ class Authentication {
    */
   static async resetPassword(req,res) {
     let { email, password } = req.body;
-    let { token } = req.params.token
+    let { token } = req.params
     const { error } = Validator.validateReset(req.body);
     if (error) {
       if (error.details) return Response.send400(res, error.details[0].message);
       else return Response.send400(res, error.message);
     }
 
-    try {
-      var findUser = await User.findOne({ email });
-      if (!findUser) {
-        return Response.send409(res, "Invalid Email");
-      }
-      const validToken = await User.findOne({
-        passwordToken: token,
-        passwordExpires: { $gte: new Date().toISOString() }
-      });
-      if (!validToken) {
-        return Response.send400(res, "Expired or Invalid Token");
-      }
+    // try {
+      // const findUser = await User.findOne({ email });
+      // if (!findUser) {
+      //   return Response.send409(res, "Invalid Email");
+      // }
+      // const validToken = await User.findOne({ token });
+      // if (!validToken) {
+      //   return Response.send400(res, "Expired or Invalid Token");
+      // }
 
-      password = bcrypt.hashSync(password, 10);
-      const check = await User.findOneAndUpdate(
-        { email: email },
-        {
-          password: password,
-          passwordToken: null,
-          passwordExpires: null
-        },
-        { new: true }
-      );
+      // password = bcrypt.hashSync(password, 10);
+      // const check = await User.findOneAndUpdate(
+      //   { email: email },
+      //   {
+      //     password: password,
+      //     passwordToken: null,
+      //     passwordExpires: null
+      //   },
+      //   { new: true }
+      // );
+      try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.sendStatus(401,"Invalid email");
+        } else {
+          password = bcrypt.hashSync(password, 10);
+            await User.findOneAndUpdate(
+                { passwordToken: req.params.token },
+                    { password: password,
+                      passwordToken: null,
+                      passwordExpires: null 
+                    }
+            );
+            Response.send201(res,"password reset successfully",{
+              user: {
+                name: user.name,
+                email: user.email,
+                isActive: user.isActive,
+                id: user.id,
+                password: user.password,
+                passwordToken:user.passwordToken
+               }
+            })
+        }
+      // }catch (error) {
+      //   Response.sendFailure(res, error, "Something went wrong", className);
+      // }
       const data = {
         from: `${process.env.MailSender}`,
-        to: findUser.email,
+        to: user.email,
         subject: "Reset Password",
-        html: `Dear ${findUser.name} <br>,
+        html: `Dear ${user.name} <br>,
         Your password has been reset successfully <br>.
         Please click this button to <button><a href="http://localhost:3000/api/users/signin/"> to login to Imanzi creations' platform</a></button>
         `        };
@@ -301,8 +340,8 @@ class Authentication {
             process.env.SECRET_OR_KEY
           ),
           user: {
-            names: findUser.name,
-            email: findUser.email
+            names: user.name,
+            email: user.email
           }
         });
     } catch (error) {

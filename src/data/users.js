@@ -2,20 +2,46 @@ import bcrypt from 'bcryptjs'
 
 const users = [
   {
-    name: 'Admin User',
+    first_name: 'John',
+    last_name: 'Doe',
     email: 'admin@example.com',
     password: bcrypt.hashSync('123456', 10),
-    isAdmin: true,
+    role: 'admin',
   },
   {
-    name: 'John Doe',
-    email: 'john@example.com',
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'admin2@example.com',
     password: bcrypt.hashSync('123456', 10),
+    role: 'admin',
   },
   {
-    name: 'Jane Doe',
-    email: 'jane@example.com',
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'seller@example.com',
     password: bcrypt.hashSync('123456', 10),
+    role:'seller'
+  },
+  {
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'seller2@example.com',
+    password: bcrypt.hashSync('123456', 10),
+    role:'seller'
+  },
+  {
+   first_name: 'John',
+    last_name: 'Doe',
+    email: 'buyer@example.com',
+    password: bcrypt.hashSync('123456', 10),
+    role:'buyer'
+  },
+  {
+    first_name: 'John',
+    last_name: 'Doe',
+    email: 'buyer2@example.com',
+    password: bcrypt.hashSync('123456', 10),
+    role:'buyer'
   },
 ]
 

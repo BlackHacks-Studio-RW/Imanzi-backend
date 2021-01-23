@@ -11,6 +11,8 @@ router.use(express.json());
 router.post('/api/users/register', Authentication.registration);
 router.delete('/api/users/delete', Authentication.profileDelete);
 router.post('/api/users/signin', Authentication.LogIn);
+router.get('/api/users/logout', Authentication.LogOut);
+router.get('/api/user/useronline', Authentication.loggedInUsers);
 router.get('/api/users/activate/:id/:code', Authentication.AccountActivation);
 router.get('/api/users/profile', Authentication.profile);
 router.post('/api/users/forgot', Authentication.forgotPassword);
