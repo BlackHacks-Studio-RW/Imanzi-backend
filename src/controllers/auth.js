@@ -137,27 +137,17 @@ class Authentication {
     }
 
     try {
-      var findUser = await User.findOne({ email });
-      if (!findUser) {
+      var user = await User.findOne({ email });
+      if (!user) {
         return Response.send409(res, "Invalid Email");
       }
-      // var canLogin = bcrypt.compare(password, findUser.password);
-     if (findUser && comparePassword(password, findUser.password)) {
-        Response.send200(res, "User logged in successfully!", {
-          token: jwt.sign(
-            {
-              email: findUser.email,
-            },
-            process.env.SECRET_OR_KEY
-          ),
-          user: {
-            names: findUser.names,
-            email: findUser.email
-          }
-        });
+      // var canLogin = bcrypt.compare(password, user.password);
+     if (user && comparePassword(password, user.password)) {
+      const token = jwtToken.createToken(user);
         
-      }
-      return Response.send409(res, "Invalid Password");
+      return res.status(200).send({ message : "User logged in successfully",token , user  }); 
+    }
+    return res.status(400).send({ status: 400, error: 'invalid email/password combination ' });
               
             } catch (error) {
               Response.sendFailure(res, error, "Something went wrong", className);

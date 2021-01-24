@@ -44,10 +44,6 @@ const userSchema = mongoose.Schema(
         type: Boolean,
         default: false,
       },
-      token: {
-      type: String,
-      default: null
-      },
       ActivationCode: requireString,
       activationExpires: {
         type: Date,
