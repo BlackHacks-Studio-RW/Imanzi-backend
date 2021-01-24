@@ -137,25 +137,29 @@ class Authentication {
     }
 
     try {
-      const user = await User.findOne({ email });
-      if (!user) {
+      var findUser = await User.findOne({ email });
+      if (!findUser) {
         return Response.send409(res, "Invalid Email");
       }
-      const token = jwt.sign({ email: user.email}, process.env.SECRET_OR_KEY, { expiresIn: '40000m' });
-      var canLogin = bcrypt.compareSync(password, user.password);
-      if (!canLogin) {
-        return Response.send409(res, "Invalid Password");
-      } 
-        await User.updateOne(
-        { email: email },
-        { 
-          online: true,
-          // token: token
-        }
-    );    
-    Response.send200(res.header('auth-token', token), "User logged in successfully!", user);
-
-        } catch (error) {
+      // var canLogin = bcrypt.compare(password, findUser.password);
+     if (findUser && comparePassword(password, findUser.password)) {
+        Response.send200(res, "User logged in successfully!", {
+          token: jwt.sign(
+            {
+              email: findUser.email,
+            },
+            process.env.SECRET_OR_KEY
+          ),
+          user: {
+            names: findUser.names,
+            email: findUser.email
+          }
+        });
+        
+      }
+      return Response.send409(res, "Invalid Password");
+              
+            } catch (error) {
               Response.sendFailure(res, error, "Something went wrong", className);
           }
   }
@@ -168,23 +172,9 @@ class Authentication {
   static async LogOut(req, res) {
     
   }
+
   /**
-   * Get logged in users  
-   * @param {Object[]} req - Request
-   * @param {Object[]} res - Response
-   * @returns {Object[]} Response Object with its status
-   */
-  static async loggedInUsers(req, res) {
-    try {
-      // request.user is getting fetched from Middleware after token authentication
-      const user = await User.findById(req.user.id);
-      res.json(user);
-    } catch (error) {
-      Response.sendFailure(res, error, "Error fetching users", className);
-    }
-  }
-  /**
-   * View user profile
+   * View user profiles
    * @param {Object[]} req - Request
    * @param {Object[]} res - Response
    * @returns {Object[]} Response Object with its status
@@ -239,9 +229,9 @@ class Authentication {
         subject: "Forgot password",
         html: `Dear ${findUser.name} <br>,
         You have requested to reset your password <br>.
-        Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.passwordToken}/"> to reset your password </a></button>
+        Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.id}/${findUser.passwordToken}/"> to reset your password </a></button>
         `        };
-        await transporter.sendMail(data);
+        // await transporter.sendMail(data);
         Response.send201(res, "Forgot password email sent successfully", {
           token: jwt.sign(
             {
@@ -253,6 +243,7 @@ class Authentication {
           user: {
             names: findUser.name,
             email: findUser.email,
+            id: findUser.id,
             passwordToken: findUser.passwordToken
           }
         });
@@ -268,65 +259,42 @@ class Authentication {
    */
   static async resetPassword(req,res) {
     let { email, password } = req.body;
-    let { token } = req.params
+    let { token } = req.params.token
     const { error } = Validator.validateReset(req.body);
     if (error) {
       if (error.details) return Response.send400(res, error.details[0].message);
       else return Response.send400(res, error.message);
     }
 
-    // try {
-      // const findUser = await User.findOne({ email });
-      // if (!findUser) {
-      //   return Response.send409(res, "Invalid Email");
-      // }
-      // const validToken = await User.findOne({ token });
-      // if (!validToken) {
-      //   return Response.send400(res, "Expired or Invalid Token");
-      // }
+    try {
+      const findUser = await User.findById(req.params.id);
+      if (!findUser) {
+        return Response.send409(res, "Can't find user");
+      }
+      const validToken = await User.findOne({ passwordToken: token });
+      if (!validToken) {
+        return Response.send400(res, "Expired or Invalid Token");
+      }
 
-      // password = bcrypt.hashSync(password, 10);
-      // const check = await User.findOneAndUpdate(
-      //   { email: email },
-      //   {
-      //     password: password,
-      //     passwordToken: null,
-      //     passwordExpires: null
-      //   },
-      //   { new: true }
-      // );
-      try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.sendStatus(401,"Invalid email");
-        } else {
-          password = bcrypt.hashSync(password, 10);
-            await User.findOneAndUpdate(
-                { passwordToken: req.params.token },
-                    { password: password,
-                      passwordToken: null,
-                      passwordExpires: null 
-                    }
-            );
-            Response.send201(res,"password reset successfully",{
-              user: {
-                name: user.name,
-                email: user.email,
-                isActive: user.isActive,
-                id: user.id,
-                password: user.password,
-                passwordToken:user.passwordToken
-               }
-            })
-        }
+      password = bcrypt.hashSync(password, 10);
+        await User.findOneAndUpdate(
+        { email: email },
+        {
+          password: password,
+          passwordToken: null,
+          passwordExpires: null
+        },
+        { new: true }
+      );
+      
       // }catch (error) {
       //   Response.sendFailure(res, error, "Something went wrong", className);
       // }
       const data = {
         from: `${process.env.MailSender}`,
-        to: user.email,
+        to: findUser.email,
         subject: "Reset Password",
-        html: `Dear ${user.name} <br>,
+        html: `Dear ${findUser.name} <br>,
         Your password has been reset successfully <br>.
         Please click this button to <button><a href="http://localhost:3000/api/users/signin/"> to login to Imanzi creations' platform</a></button>
         `        };
@@ -334,14 +302,14 @@ class Authentication {
         Response.send201(res, "Forgot password email sent successfully", {
           token: jwt.sign(
             {
-              email: email,
-              passwordToken: passwordToken
+              email: findUser.email,
+              passwordToken: findUser.passwordToken
             },
             process.env.SECRET_OR_KEY
           ),
           user: {
-            names: user.name,
-            email: user.email
+            names: findUser.name,
+            email: findUser.email
           }
         });
     } catch (error) {
