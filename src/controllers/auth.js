@@ -231,7 +231,7 @@ class Authentication {
         You have requested to reset your password <br>.
         Please click this button to <button><a href="http://localhost:3000/api/users/reset/${findUser.id}/${findUser.passwordToken}/"> to reset your password </a></button>
         `        };
-        // await transporter.sendMail(data);
+        await transporter.sendMail(data);
         Response.send201(res, "Forgot password email sent successfully", {
           token: jwt.sign(
             {
@@ -287,9 +287,6 @@ class Authentication {
         { new: true }
       );
       
-      // }catch (error) {
-      //   Response.sendFailure(res, error, "Something went wrong", className);
-      // }
       const data = {
         from: `${process.env.MailSender}`,
         to: findUser.email,
