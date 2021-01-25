@@ -29,17 +29,13 @@ class Authentication {
             else return Response.send400(res, error.message);
           }
 
-        try {
-            let user = await User.findOne({
-                email
-            });
-            if (user) {
-                return res.status(400).json({
-                    msg: "User Already Exists"
-                });
+          try {
+            if (await User.findOne({ email })) {
+              return Response.send409(res, "Email already exists");
             }
+            
             const ActivationCode = crypto.randomBytes(20).toString('hex');
-            user = new User({ name, email,password, ActivationCode });
+            const user = new User({ name, email,password, ActivationCode });
 
             const salt = await bcrypt.genSalt(10);
             user.password = await bcrypt.hash(password, salt);
@@ -58,8 +54,7 @@ class Authentication {
             Response.send201(res, "User registered successfully!", {
               token: jwt.sign(
                 {
-                  email: user.email,
-                  userType: user.userType
+                  email: user.email
                 },
                 process.env.SECRET_OR_KEY
               ),
