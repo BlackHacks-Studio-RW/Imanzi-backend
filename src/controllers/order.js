@@ -13,6 +13,7 @@ import asyncHandler from 'express-async-handler'
 // });
 
 class OrderCreator {
+   
 /**
  * 
  * @param {*} item 
@@ -20,6 +21,7 @@ class OrderCreator {
  */
 static retrieveItem(item, qty){
   console.log("Item ", item);
+ 
   return Product.findOne({
     _id: item, 
     countInStock: {
@@ -30,7 +32,7 @@ static retrieveItem(item, qty){
   if(resp && resp._id !== undefined)
   return resp
   else
-  throw new Error('Could not the item in stock.')
+  throw new Error('Could not find the item in stock.')
   })
 }
 
