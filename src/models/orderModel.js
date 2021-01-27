@@ -6,8 +6,14 @@ import mongoose from 'mongoose'
  */
 const OrderItemSchema = mongoose.Schema(
   {
-        qty: { type: Number, required: true },
-        price: { type: Number, required: true },
+        qty: { 
+          type: Number, 
+          // required: true 
+        },
+        price: { 
+          type: Number, 
+          // required: true 
+        },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
@@ -26,20 +32,20 @@ const orderSchema = mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      // required: true,
       ref: 'User',
     },
     startedCheckout: {
       type: Boolean,
       default: false,
-      required: true
+      // required: true
     },
     orderItems: {
       type: [OrderItemSchema]
     },
     paymentMethod: {
       type: String,
-      required: true,
+      // required: true,
     },
     paymentResult: {
       id: { type: String },
@@ -49,17 +55,17 @@ const orderSchema = mongoose.Schema(
     },
     taxPrice: {
       type: Number,
-      required: true,
+      // required: true,
       default: 0.0,
     },
     totalPrice: {
       type: Number,
-      required: true,
+      // required: true,
       default: 0.0,
     },
     isPaid: {
       type: Boolean,
-      required: true,
+      // required: true,
       default: false,
     },
     paidAt: {

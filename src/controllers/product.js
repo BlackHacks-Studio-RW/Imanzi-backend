@@ -14,8 +14,9 @@ cloudinary.config({
 class Product_ {
   async getProducts(req, res) {
     try {
+      // {status:'approved'}
       
-      const products = await Product.find({status:'approved'})
+      const products = await Product.find()
       
       res.status(200).send(products)
     } catch (error) {
@@ -186,6 +187,7 @@ class Product_ {
       const {rating, comment} = req.body;
 
       const product = await Product.findById(req.params.id);
+      console.log('logged in user', req.user)
 
       if(product){
         const alreadyReviewed = product.reviews.find(

@@ -16,7 +16,10 @@ router.get('/api/pendingproducts', asyncHandler(productController.pendingProduct
 /**
  * Orders
  */
-router.post('/api/orders', orderController.addOrderItems);
+router.post('/api/orders', checkAuth.verifyUser, orderController.addOrderItems);
+router.get('/api/orders/:id', checkAuth.verifyUser, orderController.getOrderById);
+
+router.get('/api/orders', checkAuth.verifyUser, isAdmin.verifyAdmin, orderController.getOrders);
 
 /**
  * Users 
